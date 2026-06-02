@@ -1,0 +1,16 @@
+# deploy/frps.toml — install to /etc/frp/frps.toml on the Tencent Cloud server.
+
+bindPort = 7000
+
+# Server side only exposes tunneled services on loopback. nginx is the public face.
+allowPorts = [{ start = 7080, end = 7080 }]
+
+auth.method = "token"
+auth.token  = "REPLACE_WITH_RANDOM_TOKEN"   # MUST match frpc
+
+transport.tls.force = true     # reject non-TLS frpc connections
+
+webServer.addr = "127.0.0.1"
+webServer.port = 7500
+webServer.user = "REPLACE_ADMIN_USER"
+webServer.password = "REPLACE_ADMIN_PASSWORD"

@@ -1,0 +1,20 @@
+# Append this `frps` service to your existing nginx docker-compose.yml.
+# It must share the same network as the nginx service so that nginx can
+# proxy_pass http://frps:7080 by service name.
+
+services:
+  frps:
+    image: snowdreamtech/frps:latest
+    container_name: frps
+    restart: unless-stopped
+    network_mode: bridge  # change to whatever network your nginx uses
+    ports:
+      # 7000 is the frpc control channel — must be reachable from the public
+      # internet (your Mac dials this). Open inbound 7000/tcp in your
+      # Tencent Cloud security group.
+      - "7000:7000"
+      # 7080 is the tunneled-app port. DO NOT expose it on the host —
+      # it must only be reachable inside the docker network, via nginx.
+    volumes:
+      - ./frps/frps.toml:/etc/frp/frps.toml:ro
+    command: ["-c", "/etc/frp/frps.toml"]

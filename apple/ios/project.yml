@@ -1,0 +1,39 @@
+name: ClaudeChatIOS
+options:
+  bundleIdPrefix: com.kebenart
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  ChatKit:
+    path: ..
+targets:
+  ClaudeChatIOS:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - path: Resources
+        buildPhase: resources
+    dependencies:
+      - package: ChatKit
+        product: ChatKit
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_CFBundleDisplayName: ClaudeChat
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "保存聊天里的图片到你的相册。"
+        PRODUCT_BUNDLE_IDENTIFIER: com.kebenart.claudechat
+        SWIFT_VERSION: "6.0"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Physical-device builds: automatic signing with your development team.
+        # Requires a working Apple ID login in Xcode → Settings → Accounts.
+        # If login fails with -1200 (TLS handshake), it's almost always a
+        # proxy/VPN doing HTTPS interception — disable it (or let *.apple.com
+        # connect directly) and sign in again. Set DEVELOPMENT_TEAM to your own
+        # team id if GWZ88V5N8D isn't yours (Xcode shows it under the account).
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: GWZ88V5N8D

@@ -1,0 +1,217 @@
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { useDeviceSettings } from '../../../hooks/useDeviceSettings';
+import { useVersionCheck } from '../../../hooks/useVersionCheck';
+import { useUiPreferences } from '../../../hooks/useUiPreferences';
+import { useSidebarController } from '../hooks/useSidebarController';
+import { useTaskMaster } from '../../../contexts/TaskMasterContext';
+import { usePaletteOps } from '../../../contexts/PaletteOpsContext';
+import type { Project, LLMProvider } from '../../../types/app';
+import type { MCPServerStatus, SidebarProps } from '../types/types';
+
+import SidebarCollapsed from './subcomponents/SidebarCollapsed';
+import SidebarContent from './subcomponents/SidebarContent';
+import SidebarModals from './subcomponents/SidebarModals';
+import type { SessionMeta } from './subcomponents/RunningSessionsList';
+
+type TaskMasterSidebarContext = {
+  setCurrentProject: (project: Project) => void;
+  mcpServerStatus: MCPServerStatus;
+};
+
+function Sidebar({
+  projects,
+  selectedProject,
+  selectedSession,
+  onProjectSelect,
+  onSessionSelect,
+  onNewSession,
+  onSessionDelete,
+  onLoadMoreSessions,
+  onProjectDelete,
+  isLoading,
+  loadingProgress: _loadingProgress,
+  onRefresh,
+  onShowSettings,
+  showSettings,
+  settingsInitialTab,
+  onCloseSettings,
+  isMobile,
+}: SidebarProps) {
+  const { t } = useTranslation(['sidebar', 'common']);
+  const { isPWA } = useDeviceSettings({ trackMobile: false });
+  const { updateAvailable, latestVersion, currentVersion, releaseInfo, installMode } = useVersionCheck(
+    'siteboon',
+    'claudecodeui',
+  );
+  const { preferences, setPreference } = useUiPreferences();
+  const { sidebarVisible } = preferences;
+  const { setCurrentProject } = useTaskMaster() as TaskMasterSidebarContext;
+  const paletteOps = usePaletteOps();
+
+  const {
+    isSidebarCollapsed,
+    showNewProject,
+    searchFilter,
+    searchMode,
+    setSearchMode,
+    conversationResults,
+    isSearching,
+    searchProgress,
+    clearConversationResults,
+    deleteConfirmation,
+    sessionDeleteConfirmation,
+    showVersionModal,
+    handleSessionClick,
+    getProjectSessions,
+    confirmDeleteSession,
+    confirmDeleteProject,
+    handleProjectSelect,
+    refreshProjects,
+    collapseSidebar: handleCollapseSidebar,
+    expandSidebar: handleExpandSidebar,
+    setShowNewProject,
+    setSearchFilter,
+    setDeleteConfirmation,
+    setSessionDeleteConfirmation,
+    setShowVersionModal,
+    isRefreshing,
+  } = useSidebarController({
+    projects,
+    selectedProject,
+    selectedSession,
+    isLoading,
+    isMobile,
+    t,
+    onRefresh,
+    onProjectSelect,
+    onSessionSelect,
+    onSessionDelete,
+    onLoadMoreSessions,
+    onProjectDelete,
+    setCurrentProject,
+    setSidebarVisible: (visible) => setPreference('sidebarVisible', visible),
+    sidebarVisible,
+  });
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.classList.toggle('pwa-mode', isPWA);
+    document.body.classList.toggle('pwa-mode', isPWA);
+  }, [isPWA]);
+
+  const handleProjectCreated = () => {
+    void paletteOps.refreshProjects();
+  };
+
+  return (
+    <>
+        <SidebarModals
+          projects={projects}
+        showSettings={showSettings}
+        settingsInitialTab={settingsInitialTab}
+        onCloseSettings={onCloseSettings}
+        showNewProject={showNewProject}
+        onCloseNewProject={() => setShowNewProject(false)}
+        onProjectCreated={handleProjectCreated}
+        deleteConfirmation={deleteConfirmation}
+        onCancelDeleteProject={() => setDeleteConfirmation(null)}
+        onConfirmDeleteProject={confirmDeleteProject}
+        sessionDeleteConfirmation={sessionDeleteConfirmation}
+        onCancelDeleteSession={() => setSessionDeleteConfirmation(null)}
+        onConfirmDeleteSession={confirmDeleteSession}
+        showVersionModal={showVersionModal}
+        onCloseVersionModal={() => setShowVersionModal(false)}
+        releaseInfo={releaseInfo}
+        currentVersion={currentVersion}
+        latestVersion={latestVersion}
+        installMode={installMode}
+        t={t}
+      />
+
+      {isSidebarCollapsed ? (
+        <SidebarCollapsed
+          onExpand={handleExpandSidebar}
+          onShowSettings={onShowSettings}
+          updateAvailable={updateAvailable}
+          onShowVersionModal={() => setShowVersionModal(true)}
+          t={t}
+        />
+      ) : (
+        <>
+        <SidebarContent
+            isPWA={isPWA}
+            isMobile={isMobile}
+            isLoading={isLoading}
+            projects={projects}
+            searchFilter={searchFilter}
+            onSearchFilterChange={setSearchFilter}
+            onClearSearchFilter={() => setSearchFilter('')}
+            searchMode={searchMode}
+            onSearchModeChange={(mode) => {
+              setSearchMode(mode);
+              if (mode === 'projects') clearConversationResults();
+            }}
+            conversationResults={conversationResults}
+            isSearching={isSearching}
+            searchProgress={searchProgress}
+            onConversationResultClick={(projectId: string | null, sessionId: string, provider: string, messageTimestamp?: string | null, messageSnippet?: string | null) => {
+              // `projectId` (DB key) is the canonical identifier post-migration.
+              // The server emits null when it can't resolve a project row for
+              // the search hit; treat that as "no project" and still navigate
+              // to the session so the user can open it from the URL.
+              const resolvedProvider = (provider || 'claude') as LLMProvider;
+              const project = projectId ? projects.find(p => p.projectId === projectId) : null;
+              const searchTarget = { __searchTargetTimestamp: messageTimestamp || null, __searchTargetSnippet: messageSnippet || null };
+              const sessionObj = {
+                id: sessionId,
+                __provider: resolvedProvider,
+                __projectId: projectId ?? undefined,
+                ...searchTarget,
+              };
+              if (project) {
+                handleProjectSelect(project);
+                const sessions = getProjectSessions(project);
+                const existing = sessions.find(s => s.id === sessionId);
+                if (existing) {
+                  handleSessionClick({ ...existing, ...searchTarget }, project.projectId);
+                } else {
+                  handleSessionClick(sessionObj, project.projectId);
+                }
+              } else {
+                handleSessionClick(sessionObj, projectId ?? '');
+              }
+            }}
+            onRefresh={() => {
+              void refreshProjects();
+            }}
+            isRefreshing={isRefreshing}
+            onCreateProject={() => setShowNewProject(true)}
+            onCollapseSidebar={handleCollapseSidebar}
+            updateAvailable={updateAvailable}
+            releaseInfo={releaseInfo}
+            latestVersion={latestVersion}
+            currentVersion={currentVersion}
+            onShowVersionModal={() => setShowVersionModal(true)}
+            onShowSettings={onShowSettings}
+            onRunningSessionSelect={(session: SessionMeta) => {
+              handleSessionClick(
+                { id: session.id, __provider: 'claude', __projectId: session.projectId ?? '' },
+                session.projectId ?? '',
+              );
+            }}
+            onNewSession={onNewSession}
+            t={t}
+          />
+        </>
+      )}
+
+    </>
+  );
+}
+
+export default Sidebar;

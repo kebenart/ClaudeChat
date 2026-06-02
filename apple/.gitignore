@@ -1,0 +1,6 @@
+.build-ios/
+ios/.build/
+ios/ClaudeChatIOS.xcodeproj/
+.build/
+watch/ClaudeChatWatch.xcodeproj/
+watch/Generated/

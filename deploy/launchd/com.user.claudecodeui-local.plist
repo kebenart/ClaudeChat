@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Autostart the claudecodeui-local server at login. Runs the production
+  build (dist-server/), NOT the dev (vite + concurrently) stack.
+
+  Install:
+    1. Build once:    cd <REPO> && npm run build
+    2. Edit the plist below: replace REPLACE_USER and the two REPLACE_*
+       path strings to match your machine.
+    3. Install:       install -m 644 deploy/launchd/com.user.claudecodeui-local.plist \
+                        ~/Library/LaunchAgents/com.user.claudecodeui-local.plist
+    4. Load:          launchctl load -w ~/Library/LaunchAgents/com.user.claudecodeui-local.plist
+    5. Verify:        launchctl list | grep claudecodeui
+                      curl -fsS http://127.0.0.1:3001/health
+
+  After editing source code:
+    cd <REPO> && npm run build
+    launchctl kickstart -k gui/$(id -u)/com.user.claudecodeui-local
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.claudecodeui-local</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Absolute path to the Node binary the daemon should use.
+             For nvm: /Users/REPLACE_USER/.nvm/versions/node/vXX.YY.Z/bin/node
+             For Homebrew: /opt/homebrew/bin/node -->
+        <string>REPLACE_NODE_PATH</string>
+        <!-- Built server entrypoint inside the repo. -->
+        <string>REPLACE_REPO_PATH/dist-server/server/index.js</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>REPLACE_REPO_PATH</string>
+
+    <!-- PATH must contain the `claude` CLI so spawn() can find it at runtime.
+         Adjust to your nvm version. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/REPLACE_USER/.nvm/versions/node/v24.11.1/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Don't thrash on rapid restart loops. -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/cclocal.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/cclocal.err.log</string>
+</dict>
+</plist>

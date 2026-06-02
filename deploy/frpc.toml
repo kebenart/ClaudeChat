@@ -1,0 +1,21 @@
+# deploy/frpc.toml — copy to ~/.config/frpc/frpc.toml on the Mac and edit.
+# frpc dials out to the server on 7000; tunnels local 3001 → server 127.0.0.1:7080.
+
+serverAddr = "REPLACE_WITH_SERVER_IP"
+serverPort = 7000
+loginFailExit = false
+
+# Shared secret with frps. Generate with: openssl rand -hex 32
+auth.method = "token"
+auth.token  = "REPLACE_WITH_RANDOM_TOKEN"
+
+transport.tls.enable = true
+transport.heartbeatInterval = 30
+transport.heartbeatTimeout  = 90
+
+[[proxies]]
+name       = "claudecodeui-local"
+type       = "tcp"
+localIP    = "127.0.0.1"
+localPort  = 3001
+remotePort = 7080

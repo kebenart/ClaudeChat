@@ -1,0 +1,13 @@
+[Unit]
+Description=frps tunnel server for claudecodeui-local
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/frps -c /etc/frp/frps.toml
+Restart=always
+RestartSec=5
+User=frp
+
+[Install]
+WantedBy=multi-user.target

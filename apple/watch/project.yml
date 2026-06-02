@@ -1,0 +1,43 @@
+name: ClaudeChatWatch
+options:
+  bundleIdPrefix: com.kebenart
+  deploymentTarget:
+    watchOS: "10.0"
+packages:
+  ChatKit:
+    path: ..
+targets:
+  ClaudeChatWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - Sources
+      - path: Resources
+        buildPhase: resources
+    dependencies:
+      - package: ChatKit
+        product: ChatKit
+    # Explicit Info.plist: a standalone watch app needs BOTH WKApplication (modern
+    # single-target marker) AND WKWatchOnly — without the latter, `simctl install`
+    # mis-classifies it as a legacy WatchKit-2 app and demands a companion bundle
+    # id. INFOPLIST_KEY_WKWatchOnly is NOT a recognized key, so it must go here.
+    # Device family is set via the TARGETED_DEVICE_FAMILY build setting below,
+    # NOT UIDeviceFamily in the plist — Xcode overwrites a plist UIDeviceFamily
+    # and warns. (watchOS family = 4.)
+    info:
+      path: Generated/Info.plist
+      properties:
+        WKApplication: true
+        WKWatchOnly: true
+        CFBundleDisplayName: ClaudeChat
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "4"
+        PRODUCT_BUNDLE_IDENTIFIER: com.kebenart.claudechat.iwatch
+        SWIFT_VERSION: "6.0"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # Physical-device builds need signing; mirrors the iOS target. For the
+        # simulator this is ignored. Set DEVELOPMENT_TEAM to your own team.
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: GWZ88V5N8D
