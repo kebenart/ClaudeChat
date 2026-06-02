@@ -8,6 +8,7 @@
 ---
 
 ## ✨ 是什么
+[官网](https://kebenart.github.io/ClaudeChat/)
 
 ClaudeChat 把你所有的 Claude Code 会话,组织成一个真正的 IM:
 
